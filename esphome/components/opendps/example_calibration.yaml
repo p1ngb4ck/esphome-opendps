@@ -1,0 +1,195 @@
+# OpenDPS Calibration Example Configuration
+# This example demonstrates the complete calibration workflow using ESPHome UI.
+#
+# The calibration assistant follows the same flow as dpsctl.py -C:
+# 1. Input Voltage Calibration (two-point)
+#    - Connect lower supply voltage, enter measured mV, step
+#    - Connect higher supply voltage, enter measured mV, step
+# 2. Output Voltage Calibration
+#    - Automatic V_DAC sweep to find max
+#    - Measure output at 10%, enter mV, step
+#    - Measure output at 90%, enter mV, step
+# 3. Output Current Calibration
+#    - Enter max DPS current (A), step
+#    - Enter load resistance (Ohm), step
+#    - Enter load max wattage (W), step
+#    - Connect load, step to start sweep
+# 4. Constant Current Calibration
+#    - Short output, step to start sweep
+#
+# Monitor the logs (INFO level) for prompts at each step.
+
+esphome:
+  name: opendps-calibration
+  platform: ESP32
+  board: esp32dev
+
+external_components:
+  - source: github://p1ngb4ck/esphome@dev
+    components: [opendps, storage, sd_storage]
+    refresh: 0s
+
+logger:
+  level: INFO
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  password: !secret ota_password
+
+# Storage for calibration backup
+storage:
+  - id: storage_id
+
+sd_storage:
+  spi_id: spi_bus
+  id: sd_storage_id
+  type: sd_spi
+  cs_pin: GPIO5
+  path: "/sd"
+
+spi:
+  id: spi_bus
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+  clk_pin: GPIO18
+
+uart:
+  id: opendps_uart
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 115200
+
+# ==============================================================================
+# OpenDPS Component
+# ==============================================================================
+opendps:
+  id: opendps_id
+  uart_id: opendps_uart
+  update_interval: 100ms
+
+  # TCP bridge for dpsctl.py access
+  tcp_bridge:
+    tcp_bridge_port: 5005
+    tcp_bridge_disconnect_delay: 1s
+    tcp_bridge_frame_timeout: 500ms
+
+  # Calibration backup configuration
+  calibration_backup:
+    calibration_backup_path: "/sd/opendps_calibration.cfg"
+    calibration_auto_restore: true
+
+  bootloader_baud_rate: 9600
+
+# ==============================================================================
+# Sensors
+# ==============================================================================
+sensor:
+  - platform: opendps
+    opendps_id: opendps_id
+    voltage_in:
+      name: "Input Voltage"
+      id: vin
+    voltage_out:
+      name: "Output Voltage"
+      id: vout
+    current_out:
+      name: "Output Current"
+      id: iout
+    power_out:
+      name: "Output Power"
+      id: pout
+
+# ==============================================================================
+# Text Input for Calibration Assistant
+# ==============================================================================
+text:
+  # Single input field for ALL calibration assistant steps.
+  # Enter your measurement value here, then press "Calibration Step" to submit.
+  - platform: template
+    name: "Calibration Input"
+    id: cal_input
+    mode: text
+    optimistic: true
+    initial_value: "0"
+
+# ==============================================================================
+# Buttons for Calibration Control
+# ==============================================================================
+button:
+  # --- Start Calibration Assistant ---
+  # This begins the guided calibration process.
+  # Follow the prompts in the logs (INFO level).
+  - platform: template
+    name: "Start Calibration Assistant"
+    on_press:
+      - logger.log:
+          level: INFO
+          format: "Starting calibration assistant..."
+      - opendps.start_calibration_assistant:
+          id: opendps_id
+
+  # --- Submit Value and Advance to Next Step ---
+  # Enter your measurement in the "Calibration Input" field,
+  # then press this button to submit and advance.
+  - platform: template
+    name: "Calibration Step"
+    on_press:
+      - lambda: |-
+          float val = atof(id(cal_input).state.c_str());
+          ESP_LOGI("cal", "Submitting calibration value: %.3f", val);
+      - opendps.calibration_assistant_step:
+          id: opendps_id
+          measured_value: !lambda "return atof(id(cal_input).state.c_str());"
+
+  # --- Cancel Calibration ---
+  - platform: template
+    name: "Cancel Calibration"
+    on_press:
+      - opendps.cancel_calibration_assistant:
+          id: opendps_id
+      - logger.log: "Calibration cancelled"
+
+  # --- Request Calibration Report ---
+  # Displays current calibration values in logs
+  - platform: template
+    name: "Request Calibration Report"
+    on_press:
+      - opendps.request_calibration_report:
+          id: opendps_id
+
+  # --- Clear All Calibration ---
+  - platform: template
+    name: "Clear All Calibration"
+    on_press:
+      - opendps.clear_calibration:
+          id: opendps_id
+      - logger.log: "Cleared all calibration (reset to defaults)"
+
+  # --- Save Calibration to Storage ---
+  - platform: template
+    name: "Save Calibration to Storage"
+    on_press:
+      - opendps.request_calibration_report:
+          id: opendps_id
+      - delay: 500ms
+      - opendps.save_calibration:
+          id: opendps_id
+      - logger.log: "Calibration saved to storage"
+
+  # --- Restore Calibration from Storage ---
+  - platform: template
+    name: "Restore Calibration from Storage"
+    on_press:
+      - opendps.restore_calibration:
+          id: opendps_id
+      - logger.log: "Calibration restored from storage"
+
+web_server:
+  version: 3

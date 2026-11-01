@@ -1,0 +1,335 @@
+#pragma once
+
+#include "esphome/core/automation.h"
+#include "opendps.h"
+
+namespace esphome {
+namespace opendps {
+
+// Enable Output Action
+template<typename... Ts> class EnableOutputAction : public Action<Ts...> {
+ public:
+  explicit EnableOutputAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(bool, enable)
+
+  void play(const Ts &...x) override {
+    bool enable = this->enable_.value(x...);
+    this->parent_->enable_output(enable);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Set Voltage Action
+template<typename... Ts> class SetVoltageAction : public Action<Ts...> {
+ public:
+  explicit SetVoltageAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(float, voltage)
+
+  void play(const Ts &...x) override {
+    float voltage = this->voltage_.value(x...);
+    this->parent_->set_voltage(voltage);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Set Current Action
+template<typename... Ts> class SetCurrentAction : public Action<Ts...> {
+ public:
+  explicit SetCurrentAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(float, current)
+
+  void play(const Ts &...x) override {
+    float current = this->current_.value(x...);
+    this->parent_->set_current(current);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Set Function Action
+template<typename... Ts> class SetFunctionAction : public Action<Ts...> {
+ public:
+  explicit SetFunctionAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(std::string, function)
+
+  void play(const Ts &...x) override {
+    std::string function = this->function_.value(x...);
+    this->parent_->set_function(function);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Set Parameter Action
+template<typename... Ts> class SetParameterAction : public Action<Ts...> {
+ public:
+  explicit SetParameterAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(std::string, key)
+  TEMPLATABLE_VALUE(std::string, value)
+
+  void play(const Ts &...x) override {
+    std::string key = this->key_.value(x...);
+    std::string value = this->value_.value(x...);
+    this->parent_->set_parameter(key, value);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Lock Action
+template<typename... Ts> class LockAction : public Action<Ts...> {
+ public:
+  explicit LockAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(bool, locked)
+
+  void play(const Ts &...x) override {
+    bool locked = this->locked_.value(x...);
+    this->parent_->lock(locked);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Set Brightness Action
+template<typename... Ts> class SetBrightnessAction : public Action<Ts...> {
+ public:
+  explicit SetBrightnessAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(uint8_t, brightness)
+
+  void play(const Ts &...x) override {
+    uint8_t brightness = this->brightness_.value(x...);
+    this->parent_->set_brightness(brightness);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Ping Action
+template<typename... Ts> class PingAction : public Action<Ts...> {
+ public:
+  explicit PingAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->send_ping(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Request Version Action
+template<typename... Ts> class RequestVersionAction : public Action<Ts...> {
+ public:
+  explicit RequestVersionAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->request_version(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Upgrade Firmware Action
+template<typename... Ts> class UpgradeFirmwareAction : public Action<Ts...> {
+ public:
+  explicit UpgradeFirmwareAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(std::string, firmware_path)
+
+  void play(const Ts &...x) override {
+    std::string path = this->firmware_path_.value(x...);
+    this->parent_->start_firmware_upgrade(path);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Request Calibration Report Action
+template<typename... Ts> class RequestCalibrationReportAction : public Action<Ts...> {
+ public:
+  explicit RequestCalibrationReportAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->request_calibration_report(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Set Calibration Action
+template<typename... Ts> class SetCalibrationAction : public Action<Ts...> {
+ public:
+  explicit SetCalibrationAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(std::string, name)
+  TEMPLATABLE_VALUE(float, value)
+
+  void play(const Ts &...x) override {
+    std::string name = this->name_.value(x...);
+    float value = this->value_.value(x...);
+    this->parent_->set_calibration(name, value);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Clear Calibration Action
+template<typename... Ts> class ClearCalibrationAction : public Action<Ts...> {
+ public:
+  explicit ClearCalibrationAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->clear_calibration(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Save Calibration Action
+template<typename... Ts> class SaveCalibrationAction : public Action<Ts...> {
+ public:
+  explicit SaveCalibrationAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(std::string, path)
+
+  void play(const Ts &...x) override {
+    if (this->path_.has_value()) {
+      this->parent_->save_calibration_to_storage(this->path_.value(x...));
+    } else {
+      this->parent_->save_calibration_to_storage();
+    }
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Restore Calibration Action
+template<typename... Ts> class RestoreCalibrationAction : public Action<Ts...> {
+ public:
+  explicit RestoreCalibrationAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(std::string, path)
+
+  void play(const Ts &...x) override {
+    if (this->path_.has_value()) {
+      this->parent_->restore_calibration_from_storage(this->path_.value(x...));
+    } else {
+      this->parent_->restore_calibration_from_storage();
+    }
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Start Calibration Assistant Action
+template<typename... Ts> class StartCalibrationAssistantAction : public Action<Ts...> {
+ public:
+  explicit StartCalibrationAssistantAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->start_calibration_assistant(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Calibration Assistant Step Action
+template<typename... Ts> class CalibrationAssistantStepAction : public Action<Ts...> {
+ public:
+  explicit CalibrationAssistantStepAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(float, measured_value)
+
+  void play(const Ts &...x) override {
+    float value = this->measured_value_.value(x...);
+    this->parent_->calibration_assistant_step(value);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Cancel Calibration Assistant Action
+template<typename... Ts> class CancelCalibrationAssistantAction : public Action<Ts...> {
+ public:
+  explicit CancelCalibrationAssistantAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->cancel_calibration_assistant(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// ============================================================================
+// Datalogger Actions
+// ============================================================================
+
+// Start Datalog Action
+template<typename... Ts> class StartDatalogAction : public Action<Ts...> {
+ public:
+  explicit StartDatalogAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(std::string, filename)
+
+  void play(const Ts &...x) override {
+    std::string filename = this->filename_.value(x...);
+    this->parent_->start_datalog(filename);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Stop Datalog Action
+template<typename... Ts> class StopDatalogAction : public Action<Ts...> {
+ public:
+  explicit StopDatalogAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->stop_datalog(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+// Flush Datalog Action
+template<typename... Ts> class SetUartBaudAction : public Action<Ts...> {
+ public:
+  explicit SetUartBaudAction(OpenDPS *parent) : parent_(parent) {}
+
+  TEMPLATABLE_VALUE(uint32_t, baud_rate)
+
+  void play(const Ts &...x) override {
+    uint32_t baud = this->baud_rate_.value(x...);
+    this->parent_->set_uart_baud(baud);
+  }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+template<typename... Ts> class FlushDatalogAction : public Action<Ts...> {
+ public:
+  explicit FlushDatalogAction(OpenDPS *parent) : parent_(parent) {}
+
+  void play(const Ts &...x) override { this->parent_->flush_datalog(); }
+
+ protected:
+  OpenDPS *parent_;
+};
+
+}  // namespace opendps
+}  // namespace esphome
