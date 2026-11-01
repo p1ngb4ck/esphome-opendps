@@ -48,6 +48,13 @@ Wire the ESP's TX to the supply's RX, RX to TX and GND to GND, at the supply's l
 `pr/opendps` (the component); `main` contains it. Base: ESPHome `dev` at `1f70f86b47`. The datalogger writes through
 the storage interface ([esphome-storage-interface](https://github.com/p1ngb4ck/esphome-storage-interface)).
 
+## License
+
+- ESPHome's own files, also where this repository changes them: the [ESPHome License](LICENSE) (MIT for the Python
+  code and everything else, GPLv3 for the C++ runtime files).
+- New files written for this repository (new components, their code, tests and documentation): MIT,
+  [LICENSE-MIT](LICENSE-MIT).
+
 ## Thanks
 
 Thank you, Johan Kanflo, for [OpenDPS](https://github.com/kanflo/opendps) - an open firmware that turned cheap
