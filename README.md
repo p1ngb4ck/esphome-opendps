@@ -59,3 +59,11 @@ the storage interface ([esphome-storage-interface](https://github.com/p1ngb4ck/e
 
 Thank you, Johan Kanflo, for [OpenDPS](https://github.com/kanflo/opendps) - an open firmware that turned cheap
 power supply modules into lab instruments.
+
+## Branch structure
+
+Each `pr/` branch holds one part of this topic on top of upstream and says in its `BRANCH.md` what it is based on. `main` holds all of them.
+
+| Branch | Based on |
+|---|---|
+| `pr/opendps` | upstream only |
